@@ -31,8 +31,8 @@ ADR 문서(「금융나침반 아키텍처 결정 기록 (ADR)」)의 "작성 �
 
 ## 2. 먼저 읽을 것 (모든 모드 공통)
 
-1. 기존 ADR 전부: `docs/금융나침반 아키텍처 결정 기록 (ADR).docx`. 원본이 Claude Docs 문서이면 그쪽이 최신이다. 사용자가 링크를 주면 docs 도구로 읽는다.
-2. 아키텍처 설계서 FC-SAD-001과 제안 ADR: Claude Docs 문서 https://claude.ai/artifact/DpPsH3e3zAj7CE1WqH2QrU ("아키텍처 설계서" 탭 12장, "제안 ADR (004~011)" 탭). docs 도구로 읽는다.
+1. 기존 ADR 전부: 정본은 Claude Docs 「금융나침반(가칭) 아키텍처 결정 기록 (ADR)」 https://claude.ai/artifact/EFhYEYAQWr6Ps7rgAxZtUg (docs 도구로 읽는다. 결정 요약 표의 상태 칸은 "ADR 상태" 드롭다운: 제안·채택·대체됨·폐기). `docs/금융나침반 아키텍처 결정 기록 (ADR).docx`는 내보낸 사본이라 최신이 아닐 수 있다.
+2. 아키텍처 설계서 FC-SAD-001과 제안 ADR: Claude Docs 문서 https://claude.ai/artifact/DpPsH3e3zAj7CE1WqH2QrU ("아키텍처 설계서" 탭 12장, "설계서 ADR (004~017)" 탭 — ADR-012~017은 2026-11-19 채택, ADR-004~011은 제안). docs 도구로 읽는다.
 3. 판단 근거 문서: `docs/금융나침반 요구사항 명세서.docx`(FC-SRS-001), `docs/금융나침반 아이디어 기획서.docx`(FC-PLN-001).
 
 .docx는 python 표준 라이브러리(zipfile + xml)로 텍스트를 뽑아 읽는다. 읽은 뒤 "ADR 목록 표(ID·결정·상태·결정일)"와 "후속 결정(미결) 목록"을 머릿속에 정리하고 시작한다.
