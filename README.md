@@ -16,9 +16,10 @@
 
 ## 주요 기능 (MVP)
 
-- **상품 비교**: 예금·적금·연금저축, 국내 상장 주식·ETF의 세후·연환산·실질 수익률, 변동성, 최대낙폭(MDD), VaR·CVaR, 샤프지수, 1~6등급 공통 위험등급
+- **상품 비교**: 예금·적금·연금저축, 수시입출금(파킹통장 포함)·청년 정책상품·외화예금, 국내 상장 주식·ETF의 세후·연환산·실질 수익률, 변동성, 최대낙폭(MDD), VaR·CVaR, 샤프지수, 1~6등급 공통 위험등급
 - **투자성향 진단과 추천**: 금융투자협회 표준투자권유준칙을 참고한 5단계 성향 진단, 적합성 필터 → 조건 필터 → 점수 정렬 → 다양화 순서의 추천, 추천 이유와 주의사항 제공
 - **리스크 모델**: EWMA·GARCH(1,1) 변동성 예측, 역사적·가상 스트레스 테스트, 몬테카를로 원금 손실 확률(분산 감소 기법 포함), 분기 VaR 백테스팅, 레버리지·인버스 상품 경고
+- **세제혜택 계좌 안내**: ISA·IRP의 금융회사별 수수료·수익률 비교와 세제혜택 설명 (계좌 자체는 추천하지 않음)
 - **4개 버전**: 글씨 크기, 대비, 정보량, 문체만 다르고 수치는 같습니다. 웹 접근성(KWCAG 2.2) 준수
 - **회원 기능**: 비회원도 진단·추천을 모두 이용할 수 있고, 회원은 관심상품 저장과 진단 기록, 관심상품 변동 알림을 받습니다
 
@@ -51,18 +52,29 @@ flowchart LR
 
 ## 기술 스택
 
-| 영역 | 기술 | 상태 |
+아래 기술은 모두 팀 합의로 채택한 ADR을 따릅니다 (ADR-002~017, 2026-11-19~20). 버전은 ADR-010에서 정했습니다.
+
+| 영역 | 기술 | 근거 ADR |
 | --- | --- | --- |
-| API 서버 | Java + Spring Boot 4.1 (Spring Security, Spring Session JDBC, Flyway) | 채택 (ADR-012). Java 25는 제안 (ADR-010) |
-| 데이터 파이프라인·분석 | Python (NumPy, SciPy, arch 등) | 채택 (ADR-012). Python 3.13은 제안 |
-| 배치 오케스트레이션 | Apache Airflow 3 | 채택 (ADR-014) |
-| 이벤트 | Apache Kafka (KRaft) + 트랜잭셔널 아웃박스 | 채택 (ADR-016) |
-| 여러 기준일 계산 | Apache Spark (PySpark) | 채택 (ADR-017) |
-| 데이터베이스 | PostgreSQL | 채택 (ADR-002). 18 버전은 제안 |
-| 화면 | React + TypeScript | 채택 (ADR-003). 단일 페이지 앱(Vite)은 제안 (ADR-004) |
-| 웹 수집 | httpx, BeautifulSoup, Playwright for Python, pdfplumber | 채택 (ADR-012) |
-| 배포 | Docker Compose | 서버 환경은 제안 (ADR-006) |
-| 제외·보류 | Hadoop(확장 단계), Elasticsearch(조건부), Flink(사용 안 함) | 채택 (ADR-015) |
+| API 서버 | Java 25 LTS + Spring Boot 4.1 (Spring Security, Spring Session JDBC, Flyway) | ADR-012, ADR-010 |
+| 데이터 파이프라인·분석 | Python 3.13 (NumPy, SciPy, arch 등) | ADR-012, ADR-010 |
+| 배치 오케스트레이션 | Apache Airflow 3.4 | ADR-014 |
+| 이벤트 | Apache Kafka 4.4 (KRaft) + 트랜잭셔널 아웃박스 | ADR-016 |
+| 여러 기준일 계산 | Apache Spark 4.3 (PySpark) | ADR-017 |
+| 데이터베이스 | PostgreSQL 18 | ADR-002 |
+| 화면 | React + TypeScript, Vite로 빌드한 단일 페이지 앱 | ADR-003, ADR-004 |
+| 웹 수집 | httpx, BeautifulSoup, Playwright for Python, pdfplumber. 원본은 파일 볼륨에 저장 | ADR-012, ADR-008 |
+| 캐시·요청 수 제한 | Redis 없이 ETag + 서버 메모리 캐시(Caffeine), Bucket4j | ADR-009 |
+| 실행 단위 | API 서버와 파이프라인을 별도 컨테이너로 두고 서로 호출하지 않음 | ADR-005 |
+| 제외·보류 | Hadoop(확장 단계), Elasticsearch(조건부), Flink(사용 안 함) | ADR-015 |
+
+## 배포
+
+| 단계 | 방식 | 근거 ADR |
+| --- | --- | --- |
+| 개발 중 | 전체 구성(proxy·api·db·Airflow·Kafka·Spark)을 로컬 Docker Compose로 실행 | ADR-006 |
+| 개발 완료 후 | 같은 Compose 구성으로 AWS Free Plan(1순위) 또는 Oracle Cloud Always Free(2순위)에 배포. 서버 수와 사양은 배치 성능 PoC로 결정 | ADR-006 |
+| DB 운영 | Docker 컨테이너로 시작(암호화 일일 백업), 추후 클라우드 관리형으로 전환 | ADR-007 |
 
 ## 저장소 구조 (계획)
 
@@ -81,7 +93,7 @@ finance-compass/
 
 | 문서 | 내용 |
 | --- | --- |
-| [아이디어 기획서](<docs/금융나침반 아이디어 기획서.docx>) (FC-PLN-001) | 배경, 기능 52개(MVP Must 27개), 금융공학 모델, 위험 요인 |
+| [아이디어 기획서](<docs/금융나침반 아이디어 기획서.docx>) (FC-PLN-001) | 배경, 기능 59개(MVP Must 30개), 금융공학 모델, 위험 요인 |
 | [요구사항 명세서](<docs/금융나침반 요구사항 명세서.docx>) (FC-SRS-001) | 기능·비기능 요구사항, 화면·API, 데이터 파이프라인, 분석·추천 규칙 |
 | [아키텍처 결정 기록](<docs/금융나침반 아키텍처 결정 기록 (ADR).docx>) | 기술 선택의 배경, 선택지, 판단 기준, 결과 |
 | [아키텍처 설계서](<docs/금융나침반 아키텍처 설계서.docx>) (FC-SAD-001) | 논리·데이터·배치·화면·보안·배포 아키텍처, 적합도 함수 |
@@ -102,6 +114,8 @@ finance-compass/
 | 주식·ETF 일별 시세 | 공공데이터포털 (금융위원회 주식·증권상품 시세정보) | 공공누리 제4유형: 출처 표시, **상업적 이용 금지**, 변경 금지 |
 | 기준금리·물가·국고채 금리 | 한국은행 경제통계시스템(ECOS) Open API | 인증키 |
 | 은행 상품 상세 | 은행 홈페이지 | robots.txt와 이용약관 준수, 요청 속도 제한, 차단 우회 금지 |
+| 수시입출금·청년 정책상품·외화예금 금리 | 은행연합회·저축은행중앙회 소비자포털 | 은행 홈페이지와 같음 (이용 조건 확인 중) |
+| ISA·IRP 수수료·수익률 | 금융투자협회 ISA 다모아, 통합연금포털 | 은행 홈페이지와 같음 (이용 조건 확인 중) |
 
 공공누리 제4유형 데이터 때문에 이 프로젝트는 비상업 MVP로만 운영합니다. 상업 서비스로 바꾸려면 유료 데이터로 교체하고 법률 검토를 거쳐야 합니다.
 
